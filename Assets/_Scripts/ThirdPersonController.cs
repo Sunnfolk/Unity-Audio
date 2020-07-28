@@ -2,21 +2,26 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PlayerMovement : MonoBehaviour
+public class ThirdPersonController : MonoBehaviour
 {
 
     // We use Serialize to make the variable appear in the Inspector
     // This allows us to change the variable at runtime 
     [SerializeField] private float _speed = 5f;
+    private Transform Cam;
 
     private float _horizontal = 0f;
     private float _vertical = 0f;
     private Vector3 _moveVector;
 
     private CharacterController _controller;
+
+    [SerializeField] private float turnSmoothTime = 0.1f;
+    float turnSmoothVelocity;
     // Start is called before the first frame update
     void Start ()
-    {
+    { 
+        Cam = Camera.main.transform;
         _controller = GetComponent<CharacterController>();
     }
 
@@ -31,10 +36,13 @@ public class PlayerMovement : MonoBehaviour
 		_moveVector = new Vector3(_horizontal,0f, _vertical).normalized;
 
         if (_moveVector.magnitude >= 0.1f)
-        {
-            float targetAngle = Mathf.Atan2(_moveVector.x, _moveVector.y);
+        { 
+            float targetAngle = Mathf.Atan2(_moveVector.x, _moveVector.z) * Mathf.Rad2Deg + Cam.eulerAngles.y;
+            float angle = Mathf.SmoothDampAngle(transform.eulerAngles.y, targetAngle, ref turnSmoothVelocity, turnSmoothTime);
+            transform.rotation = Quaternion.Euler(0f, angle, 0f);
 
-            _controller.Move(_moveVector * _speed * Time.deltaTime);
+            Vector3 moveDir = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
+            _controller.Move(moveDir * _speed * Time.deltaTime);
         }     
     }
 
